@@ -136,16 +136,17 @@ def display_loans():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
-@app.route('/loans/past-due', methods=['GET'])
-def display_past_due_loans():
+
+
+@app.route('/loans/late', methods=['GET'])
+def display_late_loans():
     try:
         current_date = dt.now()
-        past_due_loans = Loans.query.filter(Loans.Returndate < current_date, Loans.Returned == False).all()
+        late_loans = Loans.query.filter(Loans.Returndate < current_date).all()
 
-        past_due_loans_list = []
+        late_loans_list = []
 
-        for loan in past_due_loans:
+        for loan in late_loans:
             loan_info = {
                 'LoanId': loan.LoanId,
                 'CustID': loan.CustID,
@@ -153,9 +154,9 @@ def display_past_due_loans():
                 'Loandate': loan.Loandate,
                 'Returndate': loan.Returndate
             }
-            past_due_loans_list.append(loan_info)
+            late_loans_list.append(loan_info)
 
-        return jsonify({'past_due_loans': past_due_loans_list})
+        return jsonify({'past_due_loans': late_loans_list})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -261,6 +262,11 @@ def create_loan():
         book_exist = Book.query.get(data["book_id"])
         if not book_exist:
             return jsonify({'error': 'Book not found'}), 404
+        
+         # Check if the book has already loaned        
+        book_loaned = Loans.query.filter_by(BookID=data["book_id"]).first()
+        if book_loaned:
+            return jsonify({'error': 'the book has already loaned'}), 404
 
         # Set default loan dates
         loan_date = dt.now()
@@ -314,6 +320,46 @@ def delete_loans():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
+@app.route('/books/search', methods=['GET'])
+def search_books():
+    try:
+        data = request.get_json()
+
+        book = Book.query.filter_by(Name=data["name"]).first()
+
+        if not book:
+            return jsonify({'massage': 'book is not exist'})
+
+
+        return jsonify({'books': {
+            'Id': book.Id,
+            'Name': book.Name,
+            'Author': book.Author,
+            'YearPublished': book.YearPublished,
+            'Type': book.Type
+        }})
+
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/customer/search', methods=['GET'])
+def search_customer():
+    try:
+        data = request.get_json()
+        customer = Customers.query.filter_by(Name=data["name"]).first()
+
+        if not customer:
+            return jsonify({'massage': 'customer is not exist'})
+
+
+        return jsonify({'books': {
+            'Name': customer.Name,
+            'City': customer.City,
+            'Age': customer.Age
+        }})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500    
 
 if __name__ == '__main__':
     with app.app_context():
