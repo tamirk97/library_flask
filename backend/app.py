@@ -49,9 +49,12 @@ class Users(db.Model):
 
     Id = db.Column(db.Integer, primary_key=True) 
     Name = db.Column(db.String(50), nullable=False)
+    Password = db.Column(db.String(50), nullable=False)
+
  
-    def __init__(self ,Name ):
+    def __init__(self ,Name ,Password ):
         self.Name=Name
+        self.Password=Password
 
 # creating table called loans
 
